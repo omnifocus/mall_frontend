@@ -61,21 +61,28 @@ export default {
     remove(node, data) {
       console.log('node', node)
       console.log('data', data)
-      this.$http({
-        url: this.$http.adornUrl('/product/category/delete'),
-        method: 'post',
-        data: [data.catId],
-      }).then(({ data }) => {
-        if (data && data.code === 0) {
-          this.$message({
-            message: '操作成功',
-            type: 'success',
-          })
-          this.expandedKeys = [node.parent.data.catId]
-          this.loadCategory()
-        } else {
-          this.$message.error(data.msg)
-        }
+
+      this.$confirm(`确定要删除【${data.name}】吗?`, '提示', {
+        confirmButtonText: '确定',
+        cancelButtonText: '取消',
+        type: 'warning',
+      }).then(() => {
+        this.$http({
+          url: this.$http.adornUrl('/product/category/delete'),
+          method: 'post',
+          data: [data.catId],
+        }).then(({ data }) => {
+          if (data && data.code === 0) {
+            this.$message({
+              message: '操作成功',
+              type: 'success',
+            })
+            this.expandedKeys = [node.parent.data.catId]
+            this.loadCategory()
+          } else {
+            this.$message.error(data.msg)
+          }
+        })
       })
     },
   },
