@@ -4,6 +4,7 @@
     :props="defaultProps"
     @node-click="handleNodeClick"
     :expand-on-click-node="false"
+    :default-expanded-keys="expandedKeys"
     node-key="catId"
     show-checkbox
   >
@@ -27,6 +28,7 @@
 export default {
   data() {
     return {
+      expandedKeys: [],
       data: [],
       defaultProps: {
         children: 'subList',
@@ -59,11 +61,22 @@ export default {
     remove(node, data) {
       console.log('node', node)
       console.log('data', data)
-
-      const parent = node.parent
-      const children = parent.data.children || parent.data
-      const index = children.findIndex(d => d.id === data.id)
-      children.splice(index, 1)
+      this.$http({
+        url: this.$http.adornUrl('/product/category/delete'),
+        method: 'post',
+        data: [data.catId],
+      }).then(({ data }) => {
+        if (data && data.code === 0) {
+          this.$message({
+            message: '操作成功',
+            type: 'success',
+          })
+          this.expandedKeys = [node.parent.data.catId]
+          this.loadCategory()
+        } else {
+          this.$message.error(data.msg)
+        }
+      })
     },
   },
   mounted() {
