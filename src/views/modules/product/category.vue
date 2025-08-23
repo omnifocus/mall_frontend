@@ -1,5 +1,6 @@
 <template>
   <el-tree
+    :default-expanded-keys="expandedKeys"
     :data="data"
     :props="defaultProps"
     @node-click="handleNodeClick"
@@ -27,6 +28,7 @@
 export default {
   data() {
     return {
+      expandedKeys: [],
       data: [],
       defaultProps: {
         children: 'subList',
@@ -59,11 +61,38 @@ export default {
     remove(node, data) {
       console.log('node', node)
       console.log('data', data)
-
-      const parent = node.parent
-      const children = parent.data.children || parent.data
-      const index = children.findIndex(d => d.id === data.id)
-      children.splice(index, 1)
+      this.$confirm('This will permanently delete the file. Continue?', 'Warning', {
+        confirmButtonText: 'OK',
+        cancelButtonText: 'Cancel',
+        type: 'warning',
+      })
+        .then(() => {
+          this.$http({
+            url: this.$http.adornUrl(`/product/category/delete`),
+            method: 'post',
+            data: [data.catId],
+          }).then(({ data }) => {
+            if (data && data.code === 0) {
+              this.$message({
+                message: '操作成功',
+                type: 'success',
+                duration: 500,
+                onClose: () => {
+                  this.expandedKeys = [node.parent.data.catId]
+                  this.loadCategory()
+                },
+              })
+            } else {
+              this.$message.error(data.msg)
+            }
+          })
+        })
+        .catch(() => {
+          this.$message({
+            type: 'info',
+            message: 'Delete canceled',
+          })
+        })
     },
   },
   mounted() {
