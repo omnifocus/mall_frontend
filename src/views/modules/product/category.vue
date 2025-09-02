@@ -28,12 +28,15 @@
           >
             添加
           </el-button>
+          <el-button type="text" size="mini" @click="() => update(node, data)">
+            更新
+          </el-button>
         </span>
       </span>
     </el-tree>
     <el-dialog
       :close-on-click-modal="false"
-      title="添加商品"
+      :title="dialogTitle"
       :visible.sync="dialogVisible"
       width="30%"
     >
@@ -50,7 +53,7 @@
       </el-form>
       <span slot="footer" class="dialog-footer">
         <el-button @click="dialogVisible = false">Cancel</el-button>
-        <el-button type="primary" @click="saveCategory">Confirm</el-button>
+        <el-button type="primary" @click="submitCategoryForm">Confirm</el-button>
       </span>
     </el-dialog>
   </div>
@@ -64,6 +67,7 @@ export default {
         name: '',
         icon: '',
         productUnit: '',
+        catId: '',
       },
       dialogVisible: false,
       expandedKeys: [],
@@ -73,6 +77,14 @@ export default {
         label: 'name',
       },
     }
+  },
+  computed: {
+    dialogTitle() {
+      if (this.categoryForm && this.categoryForm.catId) {
+        return '修改商品'
+      }
+      return '添加商品'
+    },
   },
   methods: {
     handleNodeClick(data) {
@@ -89,11 +101,34 @@ export default {
     },
     append(node, data) {
       this.dialogVisible = true
+      // 清空数据
+      this.categoryForm = {}
       // 补全数据
       this.categoryForm.parentCid = data.catId
       this.categoryForm.catLevel = data.catLevel + 1
       this.categoryForm.showStatus = 1
       this.categoryForm.sort = 0
+    },
+
+    update(node, data) {
+      console.log('update.....')
+      this.dialogVisible = true
+      // 以免其他信息干扰
+      this.categoryForm = {}
+      this.categoryForm.catId = data.catId
+
+      // 查出数据库中的信息
+      this.$http({
+        url: this.$http.adornUrl(`/product/category/info/${data.catId}`),
+        method: 'get',
+      }).then(({ data }) => {
+        console.log(data)
+        if (data && data.code === 0) {
+          this.categoryForm = data.category
+        } else {
+          console.log(data.msg)
+        }
+      })
     },
 
     remove(node, data) {
@@ -123,10 +158,16 @@ export default {
         })
       })
     },
-    saveCategory() {
+    submitCategoryForm() {
       this.dialogVisible = false
+      let url = ''
+      if (this.dialogTitle == '添加商品') {
+        url = '/product/category/save'
+      } else {
+        url = '/product/category/update'
+      }
       this.$http({
-        url: this.$http.adornUrl('/product/category/save'),
+        url: this.$http.adornUrl(url),
         method: 'post',
         data: this.categoryForm,
       }).then(({ data }) => {
